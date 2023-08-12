@@ -16,11 +16,11 @@ func main() {
 	Debug = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 	Info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	proxyServerPort := ":8070"
-	forwardPort := ":8080"
+	proxyServerPort := os.Getenv("PROXY_SERVER_PORT")
+	forwardPort := os.Getenv("PROXY_FORWARD_PORT")
 
-	proxyPort := ":8070"
-	listenPort := ":8071"
+	proxyPort := os.Getenv("PROXY_CLIENT_PORT")
+	listenPort := os.Getenv("PROXY_LISTEN_PORT")
 
 	if slices.Contains(os.Args, "server-client") {
 		Info.Println("Starting in server-client mode")

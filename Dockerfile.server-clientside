@@ -1,0 +1,7 @@
+FROM golang:1.20
+WORKDIR /go/delivery
+ADD ./* ./
+RUN ls
+RUN go mod download && go mod verify
+RUN go build -v -o /usr/local/bin/app ./...
+CMD ["app", "server-client"]

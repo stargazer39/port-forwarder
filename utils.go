@@ -13,6 +13,7 @@ type IncomingProxyConnection struct {
 	Type       int // Type 0 is initial control connection, Type 1 is proxy connection
 	Connection net.Conn
 	Locked     bool
+	Closed     bool
 }
 
 type IncomingProxyMessage struct {
@@ -81,7 +82,7 @@ func WriteJSON(writer io.Writer, i any) error {
 	return nil
 }
 
-func HandleTCPConn(src net.Conn, dst net.Conn) {
+func CopyTCP(src net.Conn, dst net.Conn) {
 	done := make(chan struct{})
 
 	go func() {

@@ -3,15 +3,20 @@ package main
 import (
 	"log"
 	"net"
+	"time"
 )
 
 // Client that sits on the server side and then talks to the proxy server
 func ServerClient(proxyServerPort string, forwardPort string) {
 	// Create a TCP Connection to the server
+retry:
+	Info.Printf("Connecting to proxy server %s \n", proxyServerPort)
 	conn, err := net.Dial("tcp", proxyServerPort)
 
 	if err != nil {
-		log.Panicf("Listening on %s failed. Error: %s\n", proxyServerPort, err)
+		Info.Println("Listening on %s failed. Error: %s\n", proxyServerPort, err)
+		Info.Println("Retrying...")
+		goto retry
 	}
 
 	log.Println("Sending message with type 0 connection")
@@ -19,7 +24,9 @@ func ServerClient(proxyServerPort string, forwardPort string) {
 		ID:   "0",
 		Type: 0,
 	}); err != nil {
-		log.Panicln("Error: ", err)
+		Info.Printf("Error: %s\n", err)
+		Info.Println("Retrying...")
+		goto retry
 	}
 
 	for {
@@ -27,36 +34,55 @@ func ServerClient(proxyServerPort string, forwardPort string) {
 
 		// Listen for a CONNECTION request from the TCP
 		if err := ReadJSON(conn, &message); err != nil {
-			log.Panicln(err)
+			Info.Println(err)
+			goto retry
 		}
 
 		log.Println("Got message " + message.Message)
 
 		if message.Message == "CONNECTION" {
 			// Create a connection to the Proxy server
-			connn, err := net.Dial("tcp", proxyServerPort)
-
-			if err != nil {
-				log.Panicf("Listening on %s failed. Error: %s\n", proxyServerPort, err)
+			count := 0
+		pServerRetry:
+			if count == 5 {
+				goto retry
 			}
 
+			pServerConn, err := net.Dial("tcp", proxyServerPort)
+			count++
+
+			if err != nil {
+				Info.Printf("Listening on %s failed. Error: %s\n", proxyServerPort, err)
+				time.Sleep(time.Millisecond * 200)
+
+				goto pServerRetry
+			}
+			count = 0
+		fServerRetry:
+			if count == 5 {
+				goto retry
+			}
+
+			count++
 			// Dial Server side service
 			conn3, err := net.Dial("tcp", forwardPort)
 
 			if err != nil {
-				log.Panicf("Listening on %s failed. Error: %s\n", proxyServerPort, err)
+				Info.Printf("Listening on %s failed. Error: %s\n", proxyServerPort, err)
+				time.Sleep(time.Millisecond * 200)
+				goto fServerRetry
 			}
 
-			if err := WriteJSON(connn, IncomingProxyConnection{
+			if err := WriteJSON(pServerConn, IncomingProxyConnection{
 				ID:   "0",
 				Type: 1,
 			}); err != nil {
 				log.Println(err)
-				continue
+				goto retry
 			}
 
 			// Copy it into the Created connection
-			go HandleTCPConn(connn, conn3)
+			go CopyTCP(pServerConn, conn3)
 		}
 	}
 }

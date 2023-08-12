@@ -7,7 +7,15 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var (
+	Debug *log.Logger
+	Info  *log.Logger
+)
+
 func main() {
+	Debug = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+	Info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+
 	proxyServerPort := ":8070"
 	forwardPort := ":8080"
 
@@ -15,11 +23,11 @@ func main() {
 	listenPort := ":8071"
 
 	if slices.Contains(os.Args, "server-client") {
-		log.Println("Starting in server-client mode")
+		Info.Println("Starting in server-client mode")
 		ServerClient(proxyServerPort, forwardPort)
 		return
 	}
 
-	log.Println("Starting in proxy-server mode")
+	Info.Println("Starting in proxy-server mode")
 	ProxyServer(proxyPort, listenPort)
 }

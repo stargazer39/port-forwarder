@@ -104,7 +104,7 @@ func ProxyServer(proxyPort string, listenPort string) {
 					done = true
 
 					// Copy the connection ref to the new connection
-					go HandleTCPConn(conn2, conn)
+					go CopyTCP(conn2, conn)
 				}
 			}
 			if done {
